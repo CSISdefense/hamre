@@ -13,7 +13,8 @@ Description: A lot of functions used in CSIS shiny apps.
         Includes functions for variable name standardization and
         color association, tools for chart creation, and tools for
         data manipulation.
-License: I'm not sure how you even got this.
+License: Currently intended for CSIS internal use only
+URL: https://github.com/CSISdefense/hamre
 Encoding: UTF-8
 LazyData: true
 Imports: dplyr
