@@ -1,0 +1,21 @@
+Package: hamre
+Type: Package
+Title: Functions for CSIS applications
+Version: 0.1.0
+Author: Authors@R: c(person("Gregory", "Sanders",
+                            email = "gsanders@csis.org", role = "cre"),
+                    person("Gabriel", "Coll",
+                          email = "gcoll@csis.org", role = "aut"),
+                    person("Loren", "Lipsey", role = "aut"))
+Maintainer: Gregory Sanders <gsanders@csis.org>
+Depends: R (>= 3.4.0), dplyr
+Description: A lot of functions used in CSIS shiny apps.
+        Includes functions for variable name standardization and
+        color association, tools for chart creation, and tools for
+        data manipulation.
+License: I'm not sure how you even got this.
+Encoding: UTF-8
+LazyData: true
+Imports: dplyr
+RoxygenNote: 6.0.1
+Suggests: testthat
