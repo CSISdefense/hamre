@@ -1,4 +1,4 @@
-#' Deflation based on GitHub-based CSV file
+#' Deflation using GitHub-based CSV file
 #'
 #' @param data_to_deflate A data frame
 #' @param money_var The quoted name of the dollar-value variable
@@ -9,14 +9,14 @@
 #' @return Returns a data frame with the money_var deflated, otherwise identical
 #' to the original data frame
 #'
-#' @section Warning: <b>This function should be used in data processing only, not in
-#' a live app</b>.  It reads an external file from GitHub, which will slow down
-#' an app substantially if done repeatedly.
+#' @section Warning: This function should be used __in data processing only__,
+#' not in a live app.  It reads an external file from GitHub,
+#' which will slow down an app substantially if done repeatedly.
 #'
-#' @examples RDTE_data <- deflate_2016(
-#' data_to_deflate = RDTE_data,
-#' money_var = "Millions",
-#' fy_var = "fiscal_year")
+#' @examples RDTE_data <- deflate(
+#'   data_to_deflate = RDTE_data,
+#'   money_var = "Millions",
+#'   fy_var = "fiscal_year")
 deflate <- function(
   data_to_deflate,
   money_var = "Amount",
@@ -30,7 +30,8 @@ deflate <- function(
   deflators <- deflators_retrieved$Deflator
   names(deflators) <- deflators_retrieved$FY
 
-  data_to_deflate[[money_var]] <- data_to_deflate[[money_var]] /
+  data_to_deflate[[money_var]] <- as.numeric(as.character(
+    data_to_deflate[[money_var]])) /
     deflators[as.character(data_to_deflate[[fy_var]])]
 
   return(data_to_deflate)

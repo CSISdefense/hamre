@@ -1,6 +1,6 @@
 # Unit tests for hamre::money_labels()
 
-context("Axis labels")
+context("money_labels()")
 
 test_formatter <- money_labels()
 
