@@ -100,7 +100,7 @@ test_that("one digit before decimal gets two after", {
 
 test_that("receiving character axis warns and coerces", {
   expect_equal(
-    test_formatter(c("1025723", "1025999")),
+    suppressWarnings(test_formatter(c("1025723", "1025999"))),
     c("$1.0257M", "$1.0260M"))
 
   expect_warning(test_formatter(c("1025723", "1025999")))
