@@ -5,7 +5,8 @@
 \title{Deflation using GitHub-based CSV file}
 \usage{
 deflate(data_to_deflate, money_var = "Amount", fy_var = "Fiscal.Year",
-  deflator_file = "2016_deflators_actuals.csv")
+  deflator_file = "2016_deflators_actuals.csv",
+  path = "https://raw.githubusercontent.com/CSISdefense/hamre_lookups/master/")
 }
 \arguments{
 \item{data_to_deflate}{A data frame}
@@ -15,7 +16,10 @@ deflate(data_to_deflate, money_var = "Amount", fy_var = "Fiscal.Year",
 \item{fy_var}{The quoted name of the fiscal year variable}
 
 \item{deflator_file}{The quoted file name of the deflators to use;
-must be a CSV saved on GitHub in CSISdefense/hamre_lookups/master}
+must be a CSV with the columns "FY" and "Deflator."}
+
+\item{path}{The path or url for the deflator_file CSV.  By default, checks
+the CSISdefense Github lookups repository at CSISdefense/hamre_lookups/master}
 }
 \value{
 Returns a data frame with the money_var deflated, otherwise identical
@@ -25,7 +29,7 @@ to the original data frame
 Deflation using GitHub-based CSV file
 }
 \section{Warning}{
- __This function should be used in data processing only__,
+ This function should be used __in data processing only__,
 not in a live app.  It reads an external file from GitHub,
 which will slow down an app substantially if done repeatedly.
 }

@@ -4,7 +4,7 @@
 \alias{money_labels}
 \title{Tell ggplot to display dollar-value abbreviations on axis labels}
 \usage{
-money_labels()
+scale_y_continuous(labels = money_labels)
 }
 \value{
 a label-formatting function to be used with
@@ -14,5 +14,14 @@ scale_y_continuous or scale_x_continuous
 Tell ggplot to display dollar-value abbreviations on axis labels
 }
 \examples{
-geom_bar() + scale_y_continuous(labels = money_labels())
+ggplot(
+ data = FPDS \%>\%
+   group_by(Fiscal.Year, Vendor.Size) \%>\%
+   summarize(Action.Obligation = sum(Action.Obligation)),
+ aes(
+   x = Fiscal.Year,
+   y = Action.Obligation,
+   color = Vendor.Size)) +
+geom_line() +
+scale_y_continuous(labels = money_labels)
 }

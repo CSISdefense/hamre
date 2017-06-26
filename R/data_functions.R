@@ -4,7 +4,9 @@
 #' @param money_var The quoted name of the dollar-value variable
 #' @param fy_var The quoted name of the fiscal year variable
 #' @param deflator_file The quoted file name of the deflators to use;
-#' must be a CSV saved on GitHub in CSISdefense/hamre_lookups/master
+#' must be a CSV with the columns "FY" and "Deflator."
+#' @param path The path or url for the deflator_file CSV.  By default, checks
+#' the CSISdefense Github lookups repository at CSISdefense/hamre_lookups/master
 #'
 #' @return Returns a data frame with the money_var deflated, otherwise identical
 #' to the original data frame
@@ -21,11 +23,11 @@ deflate <- function(
   data_to_deflate,
   money_var = "Amount",
   fy_var = "Fiscal.Year",
-  deflator_file = "2016_deflators_actuals.csv"){
+  deflator_file = "2016_deflators_actuals.csv",
+  path = "https://raw.githubusercontent.com/CSISdefense/hamre_lookups/master/"){
 
-  deflators_retrieved <- read_csv(paste0(
-    "https://raw.githubusercontent.com/CSISdefense/hamre_lookups/master/",
-    deflator_file))
+  cat(paste("\n Applying\n", deflator_file, "\n from\n", path, "\n"))
+  deflators_retrieved <- read_csv(paste0(path, deflator_file))
 
   deflators <- deflators_retrieved$Deflator
   names(deflators) <- deflators_retrieved$FY

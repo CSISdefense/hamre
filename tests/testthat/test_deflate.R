@@ -51,3 +51,19 @@ test_that("variant class types don't cause errors or get overwritten", {
     deflate(fact, "millions", "year")$year,
     "factor")
 })
+
+
+test_that("NAs don't break function", {
+  FPDS_NA <- FPDS
+  FPDS_NA$Action.Obligation[c(14, 62, 108)] <- NA
+
+  expect_equal(
+    deflate(FPDS_NA, "Action.Obligation", "Fiscal.Year")$Action.Obligation[14],
+    as.numeric(NA))
+
+  expect_equal(
+    deflate(FPDS_NA, "Action.Obligation", "Fiscal.Year")$Action.Obligation[12],
+    23506234474)
+
+})
+
