@@ -24,4 +24,5 @@ ggplot(
    color = Vendor.Size)) +
 geom_line() +
 scale_y_continuous(labels = money_labels)
+
 }

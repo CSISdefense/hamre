@@ -39,4 +39,5 @@ RDTE_data <- deflate(
   data_to_deflate = RDTE_data,
   money_var = "Millions",
   fy_var = "fiscal_year")
+
 }

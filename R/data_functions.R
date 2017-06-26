@@ -19,6 +19,9 @@
 #'   data_to_deflate = RDTE_data,
 #'   money_var = "Millions",
 #'   fy_var = "fiscal_year")
+#'
+#' @import dplyr
+#' @export
 deflate <- function(
   data_to_deflate,
   money_var = "Amount",
@@ -27,7 +30,7 @@ deflate <- function(
   path = "https://raw.githubusercontent.com/CSISdefense/hamre_lookups/master/"){
 
   cat(paste("\n Applying\n", deflator_file, "\n from\n", path, "\n"))
-  deflators_retrieved <- read_csv(paste0(path, deflator_file))
+  deflators_retrieved <- readr::read_csv(paste0(path, deflator_file))
 
   deflators <- deflators_retrieved$Deflator
   names(deflators) <- deflators_retrieved$FY
