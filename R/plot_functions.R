@@ -106,6 +106,60 @@ money_labels <- function(axis_values){
     sig_digits))
 }
 
+#' Create a style for a tooltip wellPanel
+#'
+#' @param background_color A hex value, as quoted string, to form the
+#' background color of the tooltip
+#' @param preferred_side One of c("bottom_right", "top_right", "bottom_left",
+#' "top_left")
+#' @param flip_on_squish_h How close, in pixels, the mouse can get to the
+#' (horizontal) edge of the chart before the tooltip flips to the other
+#' side to give more space
+#' @param flip_on_squish_v How close, in pixels, the mouse can get to the
+#' (vertical) edge of the chart before the tooltip flips to the other
+#' side to give more space
+#'
+#' @return A formatted string to include for wellPanel's style argument
+#' within an output renderUI function for hover tips
+#'
+#' @usage wellPanel(style = hover_style(), "tip here")
+#'
+#' @examples
+#' output$hover_info <- renderUI({
+#'   if(is.null(input$plot_hover)){return()}
+#'   year <- round(input$plot_hover$x)
+#'   wellPanel(
+#'     style = hover_style(),
+#'     p(HTML(paste("hovering over year:", year))))
+#' })
+#'
+#' @export
+
+hover_style <- function(
+  background_color = "#f5f5f5",
+  preferred_side = "bottom_right",
+  flip_on_squish_h = 100,
+  flip_on_squish_v = 100){
 
 
+  left_pct <- (hover$x - hover$domain$left) /
+    (hover$domain$right - hover$domain$left)
+  top_pct <- (hover$domain$top - hover$y) /
+    (hover$domain$top - hover$domain$bottom)
+
+  # calculate distance from left and bottom side of the picture in pixels
+  left_px <- hover$range$left + left_pct *
+    (hover$range$right - hover$range$left)
+  top_px <- hover$range$top + top_pct *
+    (hover$range$bottom - hover$range$top)
+
+
+  # Use HTML/CSS to change style of tooltip panel here
+
+  style <- paste0(
+    "position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
+    "left:", left_px + 2, "px; top:", top_px + 2, "px;")
+
+  return(style)
+}
 
