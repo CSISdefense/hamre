@@ -44,13 +44,13 @@ deflate <- function(
 
 
 
-#' Create a colorset for ggplot2 use, using lookup using GitHub-based CSV file
+#' Create a palette for ggplot2 use, using lookup using GitHub-based CSV file
 #'
 #' @param data_for_lookup A data frame
 #' @param category_vars A vector containing the quoted names of the variables
-#' for which to set colors.  By default, includes all factor or character
+#' for which to set colors.  Any category variable that may be used as
+#' a breakout should be included.  By default, includes all factor or character
 #' variables.
-#' @param fy_var The quoted name of the fiscal year variable
 #' @param lookup_file The quoted file name of the color lookup to use;
 #' must be a CSV with the columns "variable" and "hexvalue".
 #' @param path The path or url for the data_for_lookup CSV.  By default, checks
@@ -70,9 +70,8 @@ deflate <- function(
 #'   money_var = "Millions",
 #'   fy_var = "fiscal_year")
 #'
-#' @import dplyr
 #' @export
-deflate <- function(
+lookup_colors <- function(
   data_for_lookup,
   category_vars = c(all_factors(), all_characters()),
   lookup_file = "lookup_coloration_table.csv",
