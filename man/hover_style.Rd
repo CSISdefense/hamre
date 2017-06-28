@@ -2,39 +2,39 @@
 % Please edit documentation in R/plot_functions.R
 \name{hover_style}
 \alias{hover_style}
-\title{Create a style for a tooltip wellPanel}
+\title{Define the tooltip visual style for a tooltip on a ggplot2 graph
+in a Shiny app}
 \usage{
-wellPanel(style = hover_style(), "tip here")
+wellPanel(style = hover_style(input$plot_hover), "tip here")
 }
 \arguments{
+\item{hover_object}{The Shiny input object containing the hover info.}
+
 \item{background_color}{A hex value, as quoted string, to form the
 background color of the tooltip}
+
+\item{alpha}{A number between 0 and 1, to set the opacity of the
+tooltip background}
 
 \item{preferred_side}{One of c("bottom_right", "top_right", "bottom_left",
 "top_left")}
 
-\item{flip_on_squish_h}{How close, in pixels, the mouse can get to the
-(horizontal) edge of the chart before the tooltip flips to the other
-side to give more space}
+\item{minimum_h}{The minimum horizonal width, in pixels, of the tooltip
+panel.  The panel will "squish" to be smaller as the cursor approaches
+the edge of the plotting area, but will not squish smaller than minimum_h.}
 
-\item{flip_on_squish_v}{How close, in pixels, the mouse can get to the
-(vertical) edge of the chart before the tooltip flips to the other
-side to give more space}
+\item{minimum_v}{The minimum vertical width, in pixels, of the tooltip
+panel.  The panel will "squish" to be smaller as the cursor approaches
+the edge of the plotting area, but will not squish smaller than minimum_v.}
 }
 \value{
-A formatted string to include for wellPanel's style argument
-within an output renderUI function for hover tips
+A wellPanel-based on-hover tooltip
 }
 \description{
-Create a style for a tooltip wellPanel
+Define the tooltip visual style for a tooltip on a ggplot2 graph
+in a Shiny app
 }
 \examples{
-output$hover_info <- renderUI({
-  if(is.null(input$plot_hover)){return()}
-  year <- round(input$plot_hover$x)
-  wellPanel(
-    style = hover_style(),
-    p(HTML(paste("hovering over year:", year))))
-})
+
 
 }
