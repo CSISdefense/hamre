@@ -106,50 +106,158 @@ money_labels <- function(axis_values){
     sig_digits))
 }
 
-#' Create a tooltip for a ggplot2 graph in Shiny
+
+
+
+#' Retrieve the data for the current hover location
 #'
-#'
-#' @param html_content The content to display in the tooltip.
 #' @param chart_data A data frame.  The same data used to create the chart.
 #' @param hover_object The Shiny input object containing the hover info.
-#' @param x_var The quoted name of the variable on the X axis. NEVER MIND
-#' YOU CAN DO THIS WITH hover$mapping$x
-#' @param y_var The quoted name of the variable on the Y axis. NEVER MIND
-#' YOU CAN DO THIS WITH hover$mapping$x
-#' @param chart_type One of c("line", "bar", "stacked bar", "area").
-#' Other types are not currently supported and will require manual tips.
-#' @param ... Additional arguments to customize the look of the tooltip;
-#' will be passed through to hover_style()
+#' @param chart_type Either "line" or "bar".  For scatterplot, use
+#' "line", for area or stacked bar use "bar". Other types are not currently
+#' supported and will require manual tips.
+#' @param max_distance For line and scatter charts: a distance, in pixels.  If
+#' the mouse is more than this distance from any point, the function will
+#' return a null data frame.
 #'
-#' @return A wellPanel-based on-hover tooltip.
+#' @return A data frame of
 #'
 #' @examples
 #' \dontrun{
 #' output$hover_info <- renderUI({
-#'   hover_tip(
-#'     html_content = p(html("hello world")),
+#'
+#'   hover_data(
 #'     chart_data = dataset(),
 #'     hover_object = input$plot_hover,
+#'     group_by = c("Vendor.Size", "Simple"),
 #'     chart_type = "stacked bar")
 #' })
 #' }
 #' @export
 
-hover_tip <- function(
+hover_data <- function(
   chart_data,
   hover_object,
-  html_content,
-  x_var = "Fiscal.Year",
-  y_var = "Amount",
   chart_type = "line",
-  ...
-  ){
+  max_distance = 10
+){
 
-  if(is.null(hover_object$x)) return()
-  if(is.null(hover_object$y)) return()
+  if(is.null(hover_object$x)) return(NULL)
+  if(is.null(hover_object$y)) return(NULL)
+
+  if(chart_type == "line"){
+    row <- nearPoints(
+      chart_data,
+      hover_object,
+      xvar = hover_object$mapping$x,
+      yvar = hover_object$mapping$y,
+      threshold = max_distance,
+      maxpoints = 1)
+    if(nrow(row) == 0) return(NULL)
+
+  } else if(chart_type == "bar"){
+
+    # filter to rows with the correct value of the X axis variable
+    x_class <- class(chart_data[[hover$mapping$x]])
+    if(x_class == "factor"){
+      row <- chart_data %>%
+        filter(
+          chart_data[[hover_object$mapping$x]] ==
+            levels(chart_data[[hover_object$mapping$x]])[round(hover_object$x)])
+    } else if(x_class == "character"){
+      row <- chart_data %>%
+        filter(
+          chart_data[[hover_object$mapping$x]] ==
+            levels(factor(chart_data[[hover_object$mapping$x]]))[
+              round(hover_object$x)])
+    } else if(x_class == "numeric" | x_class == "integer"){
+      row <- chart_data %>%
+        filter_(
+          paste(
+            hover_object$mapping$x,
+            "==",
+            round(hover_object$x)))
+    } else stop(paste0("Error in hover_data: X variable must be factor,",
+                       "character, numeric, or integer"))
+
+    # filter to rows with the correct level of fill breakout
+    # (for area or stacked bar)
+    if("fill" %in% hover_object$mapping){
+
+      breakout <- chart_data[[hover_object$mapping$fill]]
+      if(!(class(breakout) == "factor")) breakout %<>% factor()
+
+      # find which breakout section the cursor is in
+      y_breaks <- row %>%
+        group_by_(hover_object$mapping$fill) %>%
+        summarize_(interp(
+          ~sum(var, na.rm = TRUE), var = as.name(hover_object$mapping$y)))
+
+      y_breaks <- append(
+        cumsum(rev(pull(y_breaks, 2))),
+        hover_object$domain$bottom,
+        after = 0)
+
+      cursor_level <- Position(
+        function(x) x < hover_object$y,
+        y_breaks)
+
+      if(cursor_level > length(levels(breakout))) return(NULL)
+      row %<>% filter_(
+        paste0(
+          hover_object$mapping$fill,
+          " == '",
+          levels(breakout)[cursor_level],
+          "'"))
+    }
+
+    # filter to rows in the correct facet(s)
+    if(with(hover_object$mapping, exists("panelvar1"))){
+      if(!with(hover_object, exists("panelvar1"))) return(NULL)
+
+      if(with(hover_object$mapping, exists("panelvar2"))){
+        if(!with(hover_object, exists("panelvar2"))) return(NULL)
+        row %<>% filter_(
+          paste0(
+            hover_object$mapping$panelvar2,
+            " == '",
+            hover_object$panelvar2,
+            "'"))
+      }
+
+      row %<>% filter_(
+        paste0(
+          hover_object$mapping$panelvar1,
+          " == '",
+          hover_object$panelvar1,
+          "'"))
+    }
+
+  } else stop("chart_type must be 'line' or 'bar'")
 
 
+  ##### should I just return row here?  What's the point of aggregation?
+
+  return(row)
+
+  # chart_data <- suppressMessages(
+  #     inner_join(
+  #       select_(row, .dots = group_by),
+  #       chart_data))
+  #
+  # chart_data %<>%
+  #   ungroup() %>%
+  #   group_by_(.dots = group_by) %>%
+  #   summarize_(
+  #     temp_ = interp(
+  #       ~sum(var, na.rm = TRUE), var = as.name(hover_object$mapping$y)))
+  #
+  # names(chart_data)[which(names(chart_data) == "temp_")] <-
+  #   hover_object$mapping$y
+  #
+  # return(chart_data)
 }
+
 
 #' Define the tooltip visual style for a tooltip on a ggplot2 graph
 #' in a Shiny app
@@ -159,10 +267,11 @@ hover_tip <- function(
 #' background color of the tooltip
 #' @param alpha A number between 0 and 1, to set the opacity of the
 #' tooltip background
-#' @param preferred_side One of c("bottom_right", "top_right", "bottom_left",
-#' "top_left")
+#' @param preferred_side One of c("right", "left")
+#' @param h_just The horizontal distance, in pixels, to adjust the tooltip
+#' @param v_just The vertical distance, in pixels, to adjust the tooltop
 #' @param minimum_h The minimum horizonal width, in pixels, of the tooltip
-#' panel.  The panel will "squish" to be smaller as the cursor approaches
+#' panel.  The panel will squish to be smaller as the cursor approaches
 #' the edge of the plotting area, but will not squish smaller than minimum_h.
 #' @param minimum_v The minimum vertical width, in pixels, of the tooltip
 #' panel.  The panel will "squish" to be smaller as the cursor approaches
@@ -180,7 +289,9 @@ hover_style <- function(
   hover_object,
   background_color = "#f5f5f5",
   alpha = 0.85,
-  preferred_side = "bottom_right",
+  preferred_side = "right",
+  h_just = 0,
+  v_just = 0,
   minimum_h = 100,
   minimum_v = 100
   ){
@@ -199,10 +310,7 @@ hover_style <- function(
     (hover$domain$top - hover$domain$bottom)) *
     (hover$range$bottom - hover$range$top))
 
-  switch(
-    preferred_side,
-
-    "bottom_right" = {
+  if(preferred_side == "right"){
       if((hover$range$right - left_px) < minimum_h){
         left_px <- (hover$range$right - minimum_h)}
       if(((hover$range$top - top_px) + hover$range$bottom) < minimum_v){
@@ -211,9 +319,7 @@ hover_style <- function(
         "position:absolute; z-index:100; background-color: ",
         "rgba(", rgb[1], ", ", rgb[2], ", ", rgb[3], ", ", alpha, "); ",
         "left:", left_px, "px; top:", top_px, "px;"))
-      },
-
-    "bottom_left" = {
+      } else if (tolower(preferred_side) == "left") {
       if((left_px - hover$range$left) < minimum_h){
         left_px <- hover$range$left + minimum_h}
       if(((hover$range$top - top_px) + hover$range$bottom) < minimum_v){
@@ -222,30 +328,8 @@ hover_style <- function(
         "position:absolute; z-index:100; background-color: ",
         "rgba(", rgb[1], ", ", rgb[2], ", ", rgb[3], ", ", alpha, "); ",
         "right:", hover$range$right - left_px, "px; top:", top_px, "px;"))
-      },
+      } else stop("preferred_side must be 'right' or 'left'")
 
-    "top_right" = {
-      if((hover$range$right - left_px) < minimum_h){
-        left_px <- (hover$range$right - minimum_h)}
-      if((top_px - hover$range$top) < minimum_v){
-        top_px <- (hover$range$top + mimimum_v)}
-      return(paste0(
-        "position:absolute; z-index:100; background-color: ",
-        "rgba(", rgb[1], ", ", rgb[2], ", ", rgb[3], ", ", alpha, "); ",
-        "left:", left_px, "px; bottom:", hover$range$top - top_px, "px;"))
-    },
-
-    "top_left" = {
-      if((left_px - hover$range$left) < minimum_h){
-        left_px <- hover$range$left + minimum_h}
-      if((top_px - hover$range$top) < minimum_v){
-        top_px <- (hover$range$top + mimimum_v)}
-
-    },
-    stop(paste0(
-      "preferred_side argument must be one of the following:\n",
-      "'bottom_right', 'bottom_left','top_right', 'top_left'\n"))
-  )
 }
 
 

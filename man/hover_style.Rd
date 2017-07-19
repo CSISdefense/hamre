@@ -16,11 +16,14 @@ background color of the tooltip}
 \item{alpha}{A number between 0 and 1, to set the opacity of the
 tooltip background}
 
-\item{preferred_side}{One of c("bottom_right", "top_right", "bottom_left",
-"top_left")}
+\item{preferred_side}{One of c("right", "left")}
+
+\item{h_just}{The horizontal distance, in pixels, to adjust the tooltip}
+
+\item{v_just}{The vertical distance, in pixels, to adjust the tooltop}
 
 \item{minimum_h}{The minimum horizonal width, in pixels, of the tooltip
-panel.  The panel will "squish" to be smaller as the cursor approaches
+panel.  The panel will squish to be smaller as the cursor approaches
 the edge of the plotting area, but will not squish smaller than minimum_h.}
 
 \item{minimum_v}{The minimum vertical width, in pixels, of the tooltip

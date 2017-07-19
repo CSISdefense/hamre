@@ -2,30 +2,13 @@
 % Please edit documentation in R/data_functions.R
 \name{deflate}
 \alias{deflate}
-\alias{deflate}
 \title{Deflation using GitHub-based CSV file}
 \usage{
-deflate(data_for_lookup, category_vars = c(all_factors(), all_characters()),
-  lookup_file = "lookup_coloration_table.csv",
-  path = "https://raw.githubusercontent.com/CSISdefense/hamre_lookups/master/")
-
-deflate(data_for_lookup, category_vars = c(all_factors(), all_characters()),
-  lookup_file = "lookup_coloration_table.csv",
+deflate(data_to_deflate, money_var = "Amount", fy_var = "Fiscal.Year",
+  deflator_file = "2016_deflators_actuals.csv",
   path = "https://raw.githubusercontent.com/CSISdefense/hamre_lookups/master/")
 }
 \arguments{
-\item{data_for_lookup}{A data frame}
-
-\item{category_vars}{A vector containing the quoted names of the variables
-for which to set colors.  By default, includes all factor or character
-variables.}
-
-\item{lookup_file}{The quoted file name of the color lookup to use;
-must be a CSV with the columns "variable" and "hexvalue".}
-
-\item{path}{The path or url for the deflator_file CSV.  By default, checks
-the CSISdefense Github lookups repository at CSISdefense/hamre_lookups/master}
-
 \item{data_to_deflate}{A data frame}
 
 \item{money_var}{The quoted name of the dollar-value variable}
@@ -35,41 +18,23 @@ the CSISdefense Github lookups repository at CSISdefense/hamre_lookups/master}
 \item{deflator_file}{The quoted file name of the deflators to use;
 must be a CSV with the columns "FY" and "Deflator."}
 
-\item{fy_var}{The quoted name of the fiscal year variable}
-
-\item{path}{The path or url for the data_for_lookup CSV.  By default, checks
+\item{path}{The path or url for the deflator_file CSV.  By default, checks
 the CSISdefense Github lookups repository at CSISdefense/hamre_lookups/master}
 }
 \value{
 Returns a data frame with the money_var deflated, otherwise identical
 to the original data frame
-
-Returns a named vector of hex values, suitable for use with ggplot
-functions such as scale_color_manual() and scale_fill_manual()
 }
 \description{
 Deflation using GitHub-based CSV file
-
-Create a colorset for ggplot2 use, using lookup using GitHub-based CSV file
 }
 \section{Warning}{
  This function should be used __in data processing only__,
 not in a live app.  It reads an external file from GitHub,
 which will slow down an app substantially if done repeatedly.
-
- This function should be ideally be used in data
-processing, to create a colorset vector that will be saved in a .Rda file
-for app use.  If you want to use it directly in an app, make sure it
-only runs once - over the full data set - at app startup.  It reads an
-external (GitHub) file and is not optimized for speed.
 }
 
 \examples{
-RDTE_data <- deflate(
-  data_to_deflate = RDTE_data,
-  money_var = "Millions",
-  fy_var = "fiscal_year")
-
 RDTE_data <- deflate(
   data_to_deflate = RDTE_data,
   money_var = "Millions",

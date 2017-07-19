@@ -9,7 +9,7 @@ Author: Authors@R: c(person("Gregory", "Sanders",
                     person("Loren", "Lipsey", role = "aut"))
 Maintainer: Gregory Sanders <gsanders@csis.org>
 Depends: R (>= 3.4.0), dplyr
-Imports: ggplot2, readr, shiny, stringr
+Imports: ggplot2, readr, shiny, stringr, magrittr
 Description: A lot of functions used in CSIS shiny apps.
         Includes functions for variable name standardization and
         color association, tools for chart creation, and tools for
