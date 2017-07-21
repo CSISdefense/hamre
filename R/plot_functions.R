@@ -83,6 +83,63 @@ money_label <- function(money_values, cur = "$"){
   }
 }
 
+
+isp_header <- function(){
+tags$style(HTML(
+    "@import url('//fonts.googleapis.com/css?family=Open+Sans');
+    body {
+      font-family: 'Open Sans',  sans-serif;
+      font-weight: 500;
+      line-height: 1.1;
+      color: #554449;
+    }")),
+  tags$head(
+    tags$style(HTML("body{background-color: #fcfcfc;}"))),
+  tags$div(HTML("<div class='fusion-secondary-header'>
+                <div class='fusion-row'>
+                <div class='fusion-alignleft'><div class='fusion-contact-info'><center style=' padding:20px;'><a href='http://csis.org/program/international-security-program' target='_blank'><img class='logo' src='https://defense360.csis.org/wp-content/uploads/2015/08/ISP_new.png' width='40%'></a></center><a href='mailto:'></a></div></div>
+                </div>
+                </div>")),
+  tags$style(HTML(".fusion-secondary-header {border-bottom: 3px solid #6F828F}")),
+}
+
+
+
+
+csis_palettes <- function()
+{
+  BarPalette <- scale_fill_manual(
+    values = c(
+      "#004165",
+      "#0065a4",
+      "#0095AB",
+      "#66c6cb",
+      "#75c596",
+      "#0faa91",
+      "#51746d",
+      "#607a81",
+      "#252d3a",
+      "#353535",
+      "#797979"))
+
+  LinePalette <- scale_color_manual(
+    values = c(
+      "#004165",
+      "#75c596",
+      "#b24f94",
+      "#0095ab",
+      "#0a8672",
+      "#e22129",
+      "#66c6cb",
+      "#51746d",
+      "#797979",
+      "#788ca8",
+      "#353535"))
+}
+
+
+
+
 #' A convenience function for summation using quoted variable names
 #'
 #' @param data_frame The data frame
@@ -112,12 +169,12 @@ sum_to <- function(
 ){
   #all_numeric <- function(){
     y_vars <- which(
-      sapply(data_frame, class, simplify ="vector") %in% 
+      sapply(data_frame, class, simplify ="vector") %in%
         c("integer", "numeric"))
     y_vars <- names(data_frame)[y_vars]
     y_vars <- y_vars[!y_vars %in% group_by]
   #}
-    
+
   data_frame %<>%
     ungroup() %>%
     group_by_at(.vars = group_by) %>%
@@ -157,14 +214,14 @@ filter_by <- function(
   exclude = FALSE
 ){
   if(length(level_names) > 1){
-    level_names <- paste0("'", level_names, "',") 
+    level_names <- paste0("'", level_names, "',")
     string <- paste0(level_names, collapse = " ")
     string <- paste0(var_name, " %in% c(", string)
     string <- sub(",$",")", string)
   } else string <- paste0(var_name, " == '", level_names, "'")
-  
+
   if(exclude) string <- paste0("!", string)
-  
+
   return(data_frame %>% filter_(string))
 }
 
@@ -175,7 +232,7 @@ filter_by <- function(
 #' 2. You run it directly from a script instead of the console or a source file.
 #'
 #' It is intended to go at the start of data processing files
-#' 
+#'
 #' @examples
 #' \dontrun{
 #' # Data processing for FPDS 3.0
@@ -188,6 +245,55 @@ set_wd_here <- function(){
   setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 }
 
+
+add_diigtheme <- function(
+  plot
+  ){
+  plot <- plot +
+    theme(
+      panel.border = element_blank(),
+      panel.background = element_rect(fill = "white"),
+      plot.background = element_rect(fill = "white", color="white"),
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor.x = element_blank(),
+      panel.grid.major.y = element_line(size=.1, color="lightgray"),
+      panel.grid.minor.y = element_line(size=.1, color="lightgray"),
+      axis.ticks = element_blank()
+    ) +
+    theme(plot.title = element_text(
+      family = "Open Sans",
+      color = "#554449",
+      face="bold",
+      margin=margin(20,0,20,0),
+      hjust = 0.5)) +
+    theme(axis.text.x = element_text(
+      family = "Open Sans",
+      vjust = 7,
+      margin = margin(0,0,0,0))) +
+    theme(axis.text.y = element_text(
+      family = "Open Sans",
+      color ="#554449",
+      margin = margin(0,5,0,0))) +
+    theme(axis.title.x = element_text(
+      face = "bold",
+      color = "#554449",
+      family = "Open Sans",
+      margin = margin(15,0,0,60))) +
+    theme(axis.title.y = element_text(
+      face = "bold",
+      color = "#554449",
+      family = "Open Sans",
+      margin = margin(0,15,0,0))
+    ) +
+    theme(legend.text = element_text(
+      family = "Open Sans",
+      color ="#554449")) +
+    theme(legend.title = element_blank()) +
+    theme(legend.position = 'bottom') +
+    theme(legend.background = element_rect(fill = "white")
+    )
+return(plot)
+  }
 
 
 #' Retrieve the data for the current hover location
@@ -226,7 +332,7 @@ hover_data <- function(
   if(is.null(hover_object$y)) return(NULL)
 
   chart_data %<>% ungroup()
-  
+
   if(chart_type == "line"){
     row <- nearPoints(
       chart_data,
@@ -264,7 +370,8 @@ hover_data <- function(
 
     # filter to rows with the correct level of fill breakout
     # (for area or stacked bar)
-    if(with(hover_object$mapping, exists("fill"))){
+    if("fill" %in% names(hover_object$mapping)){
+      cat(names(hover_object$mapping))
       breakout <- chart_data[[hover_object$mapping$fill]]
       if(!(class(breakout) == "factor")) breakout %<>% factor()
 
@@ -279,7 +386,7 @@ hover_data <- function(
         cumsum()
 
       #y_breaks <- cumsum(rev(pull(y_breaks, 2)))
-      
+
       cursor_level <- base::Position(
         function(x) x > hover_object$y,
         y_breaks)
@@ -351,7 +458,7 @@ hover_data <- function(
 #' @examples
 #'  \dontrun{
 #' output$hover_info <- renderUI({
-#'     
+#'
 #'   hover_tip(
 #'     hover_object = input$plot_hover,
 #'     content = paste0(
@@ -359,7 +466,7 @@ hover_data <- function(
 #'       "<b> Vendor Size: </b>", shown$Vendor.Size, "<br/>",
 #'       "<b> Amount: </b>", money_label(shown$Action.Obligation)))
 #' })
-#' 
+#'
 #' output$hover_info <- renderUI({
 #'   hover_tip(
 #'     hover_object = input$plot_hover,
@@ -368,7 +475,7 @@ hover_data <- function(
 #'       hover_object = input$plot_hover,
 #'       chart_type = "bar"))
 #' })
-#' 
+#'
 #' }
 
 hover_tip <- function(
@@ -387,7 +494,7 @@ hover_tip <- function(
   if(is.null(content)) return(NULL)
   if(is.null(hover_object$x)) return(NULL)
   if(is.null(hover_object$y)) return(NULL)
-  
+
   rgb <- col2rgb(background_color)[,1]
   if(alpha > 1 | alpha < 0) stop("alpha must be between 0 and 1")
 
@@ -410,7 +517,7 @@ hover_tip <- function(
       "position:absolute; z-index:100; background-color: ",
       "rgba(", rgb[1], ", ", rgb[2], ", ", rgb[3], ", ", alpha, "); ",
       "left:", left_px, "px; top:", top_px, "px;")
-    
+
   } else if (tolower(preferred_side) == "left") {
     if((left_px - hover$range$left) < minimum_h){
       left_px <- hover$range$left + minimum_h}
@@ -420,13 +527,13 @@ hover_tip <- function(
       "position:absolute; z-index:100; background-color: ",
       "rgba(", rgb[1], ", ", rgb[2], ", ", rgb[3], ", ", alpha, "); ",
       "right:", hover$range$right - left_px, "px; top:", top_px, "px;")
-    
+
   } else stop("preferred_side must be 'right' or 'left'")
-  
+
   if(any(class(content) == "data.frame")){
     if(nrow(content) > 1){
       stop("content must be a HTML string or a single-row data frame")}
-    
+
     content %<>% sapply(
       function(x){
         if(class(x) == "numeric"){
@@ -434,7 +541,7 @@ hover_tip <- function(
         } else return(x)
       },
       simplify = "vector")
-    
+
     strings <- character()
     for(i in 1:length(content)){
       strings[i] <- paste0("<b>", names(content)[i], ": </b>", content[i])}
