@@ -1,8 +1,14 @@
-#' Tell ggplot to display dollar-value abbreviations on axis labels
+#' Converts numbers into character strings formatted as currency values,
+#' with reasonable abbreviations and significant digits.  Is vectorized and
+#' can be used with ggplot's axis scaling functions - see examples.
 #'
-#' @return a label-formatting function to be used with
-#' scale_y_continuous or scale_x_continuous
-#' @usage scale_y_continuous(labels = money_labels)
+#' @param money_values A numeric or integer value or vector of values, to
+#' convert to currency abbreviations
+#' @param cur A character or string to prepend to the labels.  Likely a
+#' currency sign - "$" by default.  Use "" for no prepended string.
+#'
+#' @return a character vector of formatted labels
+#' @usage scale_y_continuous(labels = money_label)
 #' @examples
 #' ggplot(
 #'  data = FPDS %>%
@@ -13,99 +19,174 @@
 #'    y = Action.Obligation,
 #'    color = Vendor.Size)) +
 #' geom_line() +
-#' scale_y_continuous(labels = money_labels)
+#' scale_y_continuous(labels = money_label)
 #'
 #' @export
 
-money_labels <- function(axis_values){
+money_label <- function(money_values, cur = "$"){
 
-  if(class(axis_values) == "character"){
+  if(class(money_values) == "character"){
     warning(
-      paste("money_labels() expects the axis to be a numeric variable",
+      paste("money_label() expects the axis to be a numeric variable",
             "but the axis is a character variable.  Coercing to numeric."))
-    axis_values <- as.numeric(axis_values)
-  } else if(class(axis_values) != "numeric" & class(axis_values)!= "integer"){
+    money_values <- as.numeric(money_values)
+  } else if(class(money_values) != "numeric" & class(money_values)!= "integer"){
     stop(paste(
       "money_labels() expected a numeric axis, but got:",
-      class(axis_values)))
+      class(money_values)))
   }
-  axis_range <- max(axis_values, na.rm = TRUE) - min(axis_values, na.rm = TRUE)
-  sig_digits <-  floor(log10(max(abs(axis_values), na.rm = TRUE))) -
-    round(log10(axis_range))
 
-  label_one_value <- function(a_value, max_value, sig) {
+  money_format <- function(a_value, max_value, sig, currency) {
     if(is.na(a_value)) return(NULL)
-    if(max_value > 1e7){
-      if(max_value > 1e11){
-        if(max_value > 1e13){
-          if(max_value > 1e15){
-            return(as.character(a_value))
-          } else if(max_value > 1e14){
-            y_lab <- paste0(
-              "$", formatC(a_value/1e12, max(sig, 0), format = "f"), "T")
-          } else {
-            y_lab <- paste0(
-              "$", formatC(a_value/1e12, max(sig, 1), format = "f"), "T")
-          }
-        } else if(max_value > 1e12){
-          y_lab <- paste0(
-            "$", formatC(a_value/1e12, max(sig, 2), format = "f"), "T")
-        } else {
-          y_lab <- paste0(
-            "$", formatC(a_value/1e9, max(sig, 0), format = "f"), "B")
-        }
-      } else if(max_value > 1e9){
-        if(max_value > 1e10){
-          y_lab <- paste0(
-            "$", formatC(a_value/1e9, max(sig, 1), format = "f"), "B")
-        } else {
-          y_lab <- paste0(
-            "$", formatC(a_value/1e9, max(sig, 2), format = "f"), "B")
-        }
-      } else {
-        if(max_value > 1e8){
-          y_lab <- paste0(
-            "$", formatC(a_value/1e6, max(sig, 0), format = "f"), "M")
-        } else {
-          y_lab <- paste0(
-            "$", formatC(a_value/1e6, max(sig, 1), format = "f"), "M")
-        }
-      }
-    } else if(max_value > 1e3){
-      if(max_value > 1e5){
-        if(max_value > 1e6){
-          y_lab <- paste0(
-            "$", formatC(a_value/1e6, max(sig, 2), format = "f"), "M")
-        } else {
-          y_lab <- paste0(
-            "$", formatC(a_value/1e3, max(sig, 0), format = "f"), "k")
-        }
-      } else if(max_value > 1e4){
-        y_lab <- paste0(
-          "$", formatC(a_value/1e3, max(sig, 1), format = "f"), "k")
-      } else {
-        y_lab <- paste0(
-          "$", formatC(a_value/1e3, max(sig, 2), format = "f"), "k")
-      }
-    } else if(max_value > 10){
-      if(max_value > 100){
-        y_lab <- paste0("$", formatC(a_value, max(sig, 0), format = "f"))
-      } else {
-        y_lab <- paste0("$", formatC(a_value, max(sig, 1), format = "f"))
-      }
-    } else {
-      y_lab <- paste0("$", formatC(a_value, max(sig, 2), format = "f"))
-    }
-    return(y_lab)
+
+    logged <- ceiling(log10(abs(max_value)))
+
+    if(logged > 15) return(paste0(cur, a_value))
+    lab <- switch(
+      logged,
+      {paste0(cur, formatC(a_value, max(sig, 2), format = "f"))},
+      {paste0(cur, formatC(a_value, max(sig, 1), format = "f"))},
+      {paste0(cur, formatC(a_value, max(sig, 0), format = "f"))},
+      {paste0(cur, formatC(a_value/1e3, max(sig, 2), format = "f"), "k")},
+      {paste0(cur, formatC(a_value/1e3, max(sig, 1), format = "f"), "k")},
+      {paste0(cur, formatC(a_value/1e3, max(sig, 0), format = "f"), "k")},
+      {paste0(cur, formatC(a_value/1e6, max(sig, 2), format = "f"), "M")},
+      {paste0(cur, formatC(a_value/1e6, max(sig, 1), format = "f"), "M")},
+      {paste0(cur, formatC(a_value/1e6, max(sig, 0), format = "f"), "M")},
+      {paste0(cur, formatC(a_value/1e9, max(sig, 2), format = "f"), "B")},
+      {paste0(cur, formatC(a_value/1e9, max(sig, 1), format = "f"), "B")},
+      {paste0(cur, formatC(a_value/1e9, max(sig, 0), format = "f"), "B")},
+      {paste0(cur, formatC(a_value/1e12, max(sig, 2), format = "f"), "T")},
+      {paste0(cur, formatC(a_value/1e12, max(sig, 1), format = "f"), "T")},
+      {paste0(cur, formatC(a_value/1e12, max(sig, 0), format = "f"), "T")})
+
+    return(lab)
   }
 
-  return(sapply(
-    axis_values,
-    label_one_value,
-    max(abs(axis_values), na.rm = TRUE),
-    sig_digits))
+  if(length(money_values) > 1){
+    axis_range <-
+      max(money_values, na.rm = TRUE) - min(money_values, na.rm = TRUE)
+    sig_digits <-  floor(log10(max(abs(money_values), na.rm = TRUE))) -
+      round(log10(axis_range))
+
+    return(sapply(
+      money_values,
+      money_format,
+      max(abs(money_values), na.rm = TRUE),
+      sig_digits,
+      simplify = "vector"))
+  } else {
+    return(money_format(
+      money_values,
+      money_values,
+      2 - (floor(log10(abs(money_values))) %% 3)))
+  }
 }
 
+#' A convenience function for summation using quoted variable names
+#'
+#' @param data_frame The data frame
+#' @param group_by The variables you want to keep as breakouts in the
+#' aggregated data, as a character vector of variable names.  This should
+#' include any variable you plan to use on an X-axis (e.g. Fiscal.Year).
+#' @param y_vars The variables you want to aggregate, as a character vector
+#' of variable names.  By default, all numeric or integer variables that are
+#' not listed in the group_by argument.  Variables that are not listed in
+#' either group_by or y_vars will be rolled up in the aggregation and absent
+#' from the returned data frame.
+#'
+#' @return An aggregated data frame
+#'
+#' @examples
+#' \dontrun{
+#' shown %<>% sum_to(
+#'   group_by = c(input$breakout_variable, input$facet_variable, "Fiscal.Year"),
+#'   y_vars = input$y_variable)
+#' }
+#' @export
+
+sum_to <- function(
+  data_frame,
+  group_by
+  #y_vars = all_numeric()
+){
+  #all_numeric <- function(){
+    y_vars <- which(
+      sapply(data_frame, class, simplify ="vector") %in% 
+        c("integer", "numeric"))
+    y_vars <- names(data_frame)[y_vars]
+    y_vars <- y_vars[!y_vars %in% group_by]
+  #}
+    
+  data_frame %<>%
+    ungroup() %>%
+    group_by_at(.vars = group_by) %>%
+    summarize_at(.vars = y_vars, .funs = sum, na.rm = TRUE)
+
+  return(data_frame)
+
+}
+
+
+#' A convenience function for filtering using quoted variable names
+#'
+#' @param data_frame The data frame
+#' @param var_name The quoted name of the variable to use for filtering.
+#' @param level_names The values (typically factor levels) of the variable
+#' that you want to keep in the data, as vector of quoted value names.
+#' Or, if you set exclude = TRUE, the variables you want to throw away.
+#' @param exclude If TRUE, throw out rows with values listed in level_names.
+#' If FALSE, keep rows with values listed in level_names.
+#'
+#' @return A filtered data frame
+#'
+#' @examples
+#' \dontrun{
+#' shown %<>% filter_by(
+#'   var_name = "Vendor.Size",
+#'   level_names = input$vendor_size_filter)
+#' }
+#' @export
+
+
+
+filter_by <- function(
+  data_frame,
+  var_name,
+  level_names,
+  exclude = FALSE
+){
+  if(length(level_names) > 1){
+    level_names <- paste0("'", level_names, "',") 
+    string <- paste0(level_names, collapse = " ")
+    string <- paste0(var_name, " %in% c(", string)
+    string <- sub(",$",")", string)
+  } else string <- paste0(var_name, " == '", level_names, "'")
+  
+  if(exclude) string <- paste0("!", string)
+  
+  return(data_frame %>% filter_(string))
+}
+
+#' Sets the working directory to the folder holding the script from which it
+#' is called.  This is kludgey and will only work if:
+#'
+#' 1. You are using RStudio, and
+#' 2. You run it directly from a script instead of the console or a source file.
+#'
+#' It is intended to go at the start of data processing files
+#' 
+#' @examples
+#' \dontrun{
+#' # Data processing for FPDS 3.0
+#' library(tidyverse)
+#' library(csis360)
+#' set_wd_here()
+#' }
+
+set_wd_here <- function(){
+  setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+}
 
 
 
@@ -126,10 +207,9 @@ money_labels <- function(axis_values){
 #' \dontrun{
 #' output$hover_info <- renderUI({
 #'
-#'   hover_data(
+#'   shown <- hover_data(
 #'     chart_data = dataset(),
 #'     hover_object = input$plot_hover,
-#'     group_by = c("Vendor.Size", "Simple"),
 #'     chart_type = "stacked bar")
 #' })
 #' }
@@ -138,13 +218,15 @@ money_labels <- function(axis_values){
 hover_data <- function(
   chart_data,
   hover_object,
-  chart_type = "line",
+  chart_type,
   max_distance = 10
 ){
 
   if(is.null(hover_object$x)) return(NULL)
   if(is.null(hover_object$y)) return(NULL)
 
+  chart_data %<>% ungroup()
+  
   if(chart_type == "line"){
     row <- nearPoints(
       chart_data,
@@ -158,7 +240,7 @@ hover_data <- function(
   } else if(chart_type == "bar"){
 
     # filter to rows with the correct value of the X axis variable
-    x_class <- class(chart_data[[hover$mapping$x]])
+    x_class <- class(chart_data[[hover_object$mapping$x]])
     if(x_class == "factor"){
       row <- chart_data %>%
         filter(
@@ -182,32 +264,32 @@ hover_data <- function(
 
     # filter to rows with the correct level of fill breakout
     # (for area or stacked bar)
-    if("fill" %in% hover_object$mapping){
-
+    if(with(hover_object$mapping, exists("fill"))){
       breakout <- chart_data[[hover_object$mapping$fill]]
       if(!(class(breakout) == "factor")) breakout %<>% factor()
 
       # find which breakout section the cursor is in
       y_breaks <- row %>%
         group_by_(hover_object$mapping$fill) %>%
-        summarize_(interp(
-          ~sum(var, na.rm = TRUE), var = as.name(hover_object$mapping$y)))
+        summarize_at(
+          .vars =hover_object$mapping$y,
+          .funs = sum, na.rm = TRUE) %>%
+        pull(2) %>%
+        rev() %>%
+        cumsum()
 
-      y_breaks <- append(
-        cumsum(rev(pull(y_breaks, 2))),
-        hover_object$domain$bottom,
-        after = 0)
-
-      cursor_level <- Position(
-        function(x) x < hover_object$y,
+      #y_breaks <- cumsum(rev(pull(y_breaks, 2)))
+      
+      cursor_level <- base::Position(
+        function(x) x > hover_object$y,
         y_breaks)
 
-      if(cursor_level > length(levels(breakout))) return(NULL)
+            if(is.na(cursor_level)) return(NULL)
       row %<>% filter_(
         paste0(
           hover_object$mapping$fill,
           " == '",
-          levels(breakout)[cursor_level],
+          rev(levels(breakout))[cursor_level],
           "'"))
     }
 
@@ -235,58 +317,63 @@ hover_data <- function(
 
   } else stop("chart_type must be 'line' or 'bar'")
 
-
-  ##### should I just return row here?  What's the point of aggregation?
-
   return(row)
 
-  # chart_data <- suppressMessages(
-  #     inner_join(
-  #       select_(row, .dots = group_by),
-  #       chart_data))
-  #
-  # chart_data %<>%
-  #   ungroup() %>%
-  #   group_by_(.dots = group_by) %>%
-  #   summarize_(
-  #     temp_ = interp(
-  #       ~sum(var, na.rm = TRUE), var = as.name(hover_object$mapping$y)))
-  #
-  # names(chart_data)[which(names(chart_data) == "temp_")] <-
-  #   hover_object$mapping$y
-  #
-  # return(chart_data)
 }
 
 
-#' Define the tooltip visual style for a tooltip on a ggplot2 graph
-#' in a Shiny app
+#' Create a tooltip for a ggplot in a Shiny application
 #'
 #' @param hover_object The Shiny input object containing the hover info.
-#' @param background_color A hex value, as quoted string, to form the
+#' @param content *Either* a single-row data frame from which to automatically
+#' generate a tooltip, *or* a string with the full contents of a custom
+#' tooltip, formatted for HTML.
+#' @param background_color A hex value, as string, to form the
 #' background color of the tooltip
 #' @param alpha A number between 0 and 1, to set the opacity of the
 #' tooltip background
 #' @param preferred_side One of c("right", "left")
-#' @param h_just The horizontal distance, in pixels, to adjust the tooltip
-#' @param v_just The vertical distance, in pixels, to adjust the tooltop
+#' @param h_just The horizontal distance, in pixels, to move the tooltip
+#' to the right.  Negative values will move the tooltip to the left.
+#' @param v_just The vertical distance, in pixels, to move the tooltip
+#' up.  Negative values will move the tooltip down.
 #' @param minimum_h The minimum horizonal width, in pixels, of the tooltip
 #' panel.  The panel will squish to be smaller as the cursor approaches
 #' the edge of the plotting area, but will not squish smaller than minimum_h.
 #' @param minimum_v The minimum vertical width, in pixels, of the tooltip
 #' panel.  The panel will "squish" to be smaller as the cursor approaches
-#' the edge of the plotting area, but will not squish smaller than minimum_v.
+#' the bottom of the plotting area, but will not squish smaller than minimum_v.
 #'
 #' @return A wellPanel-based on-hover tooltip
 #'
-#' @usage wellPanel(style = hover_style(input$plot_hover), "tip here")
+#' @usage hover_tip(input$plot_hover, "<b> Hello World </b>")
 #'
 #' @examples
-#'
-#'
+#'  \dontrun{
+#' output$hover_info <- renderUI({
+#'     
+#'   hover_tip(
+#'     hover_object = input$plot_hover,
+#'     content = paste0(
+#'       "<b> Fiscal Year: </b>", shown$Fiscal.Year, "<br/>",
+#'       "<b> Vendor Size: </b>", shown$Vendor.Size, "<br/>",
+#'       "<b> Amount: </b>", money_label(shown$Action.Obligation)))
+#' })
+#' 
+#' output$hover_info <- renderUI({
+#'   hover_tip(
+#'     hover_object = input$plot_hover,
+#'     content = hover_data(
+#'       chart_data = dataset(),
+#'       hover_object = input$plot_hover,
+#'       chart_type = "bar"))
+#' })
+#' 
+#' }
 
-hover_style <- function(
+hover_tip <- function(
   hover_object,
+  content,
   background_color = "#f5f5f5",
   alpha = 0.85,
   preferred_side = "right",
@@ -297,6 +384,10 @@ hover_style <- function(
   ){
 
   hover <- hover_object
+  if(is.null(content)) return(NULL)
+  if(is.null(hover_object$x)) return(NULL)
+  if(is.null(hover_object$y)) return(NULL)
+  
   rgb <- col2rgb(background_color)[,1]
   if(alpha > 1 | alpha < 0) stop("alpha must be between 0 and 1")
 
@@ -304,32 +395,53 @@ hover_style <- function(
   left_px <- hover$range$left +
     (((hover$x - hover$domain$left) /
     (hover$domain$right - hover$domain$left)) *
-    (hover$range$right - hover$range$left))
+    (hover$range$right - hover$range$left)) + h_just
   top_px <- hover$range$top +
     (((hover$domain$top - hover$y) /
     (hover$domain$top - hover$domain$bottom)) *
-    (hover$range$bottom - hover$range$top))
+    (hover$range$bottom - hover$range$top)) - v_just
 
   if(preferred_side == "right"){
-      if((hover$range$right - left_px) < minimum_h){
-        left_px <- (hover$range$right - minimum_h)}
-      if(((hover$range$top - top_px) + hover$range$bottom) < minimum_v){
-        top_px <- (hover$range$bottom - mimimum_v)}
-      return(paste0(
-        "position:absolute; z-index:100; background-color: ",
-        "rgba(", rgb[1], ", ", rgb[2], ", ", rgb[3], ", ", alpha, "); ",
-        "left:", left_px, "px; top:", top_px, "px;"))
-      } else if (tolower(preferred_side) == "left") {
-      if((left_px - hover$range$left) < minimum_h){
-        left_px <- hover$range$left + minimum_h}
-      if(((hover$range$top - top_px) + hover$range$bottom) < minimum_v){
-        top_px <- (hover$range$top - (hover$range$bottom + mimimum_v))}
-      return(paste0(
-        "position:absolute; z-index:100; background-color: ",
-        "rgba(", rgb[1], ", ", rgb[2], ", ", rgb[3], ", ", alpha, "); ",
-        "right:", hover$range$right - left_px, "px; top:", top_px, "px;"))
-      } else stop("preferred_side must be 'right' or 'left'")
+    if((hover$range$right - left_px) < minimum_h){
+      left_px <- (hover$range$right - minimum_h)}
+    if(((hover$range$top - top_px) + hover$range$bottom) < minimum_v){
+      top_px <- (hover$range$bottom - minimum_v)}
+    style <- paste0(
+      "position:absolute; z-index:100; background-color: ",
+      "rgba(", rgb[1], ", ", rgb[2], ", ", rgb[3], ", ", alpha, "); ",
+      "left:", left_px, "px; top:", top_px, "px;")
+    
+  } else if (tolower(preferred_side) == "left") {
+    if((left_px - hover$range$left) < minimum_h){
+      left_px <- hover$range$left + minimum_h}
+    if(((hover$range$top - top_px) + hover$range$bottom) < minimum_v){
+      top_px <- (hover$range$top - (hover$range$bottom + mimimum_v))}
+    style <- paste0(
+      "position:absolute; z-index:100; background-color: ",
+      "rgba(", rgb[1], ", ", rgb[2], ", ", rgb[3], ", ", alpha, "); ",
+      "right:", hover$range$right - left_px, "px; top:", top_px, "px;")
+    
+  } else stop("preferred_side must be 'right' or 'left'")
+  
+  if(any(class(content) == "data.frame")){
+    if(nrow(content) > 1){
+      stop("content must be a HTML string or a single-row data frame")}
+    
+    content %<>% sapply(
+      function(x){
+        if(class(x) == "numeric"){
+          return(money_label(x, cur = ""))
+        } else return(x)
+      },
+      simplify = "vector")
+    
+    strings <- character()
+    for(i in 1:length(content)){
+      strings[i] <- paste0("<b>", names(content)[i], ": </b>", content[i])}
+    content <-paste0(strings, collapse = "<br/>")
+  }
 
+  return(wellPanel(style = style, p(HTML(content))))
 }
 
 

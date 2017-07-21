@@ -4,7 +4,7 @@
 \alias{hover_data}
 \title{Retrieve the data for the current hover location}
 \usage{
-hover_data(chart_data, hover_object, chart_type = "line", max_distance = 10)
+hover_data(chart_data, hover_object, chart_type, max_distance = 10)
 }
 \arguments{
 \item{chart_data}{A data frame.  The same data used to create the chart.}
@@ -29,10 +29,9 @@ Retrieve the data for the current hover location
 \dontrun{
 output$hover_info <- renderUI({
 
-  hover_data(
+  shown <- hover_data(
     chart_data = dataset(),
     hover_object = input$plot_hover,
-    group_by = c("Vendor.Size", "Simple"),
     chart_type = "stacked bar")
 })
 }
